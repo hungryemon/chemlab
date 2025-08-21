@@ -1,0 +1,108 @@
+{
+  "@@locale": "en",
+  "@@x-template": true,
+  "homeTitle": "Chemical Compounds",
+  "@homeTitle": {
+    "description": "Title for the home screen"
+  },
+  "searchHint": "Search compound",
+  "@searchHint": {
+    "description": "Hint text for search input field"
+  },
+  "detailsTitle": "Compound Details",
+  "@detailsTitle": {
+    "description": "Title for the compound details screen"
+  },
+  "searchTitle": "Search Compounds",
+  "@searchTitle": {
+    "description": "Title for the search screen"
+  },
+  "loading": "Loading...",
+  "@loading": {
+    "description": "Loading indicator text"
+  },
+  "error": "Error",
+  "@error": {
+    "description": "Generic error message"
+  },
+  "noResults": "No results found",
+  "@noResults": {
+    "description": "Message when search returns no results"
+  },
+  "molecularFormula": "Molecular Formula",
+  "@molecularFormula": {
+    "description": "Label for molecular formula"
+  },
+  "molecularWeight": "Molecular Weight",
+  "@molecularWeight": {
+    "description": "Label for molecular weight"
+  },
+  "iupacName": "IUPAC Name",
+  "@iupacName": {
+    "description": "Label for IUPAC name"
+  },
+  "casNumber": "CAS Number",
+  "@casNumber": {
+    "description": "Label for CAS number"
+  },
+  "synonyms": "Synonyms",
+  "@synonyms": {
+    "description": "Label for synonyms section"
+  },
+  "hazards": "Hazards",
+  "@hazards": {
+    "description": "Label for hazards section"
+  },
+  "description": "Description",
+  "@description": {
+    "description": "Label for description section"
+  },
+  "networkError": "Network error. Please check your connection.",
+  "@networkError": {
+    "description": "Error message for network issues"
+  },
+  "compoundNotFound": "Compound not found",
+  "@compoundNotFound": {
+    "description": "Error message when compound is not found"
+  },
+  "offlineMode": "Offline Mode",
+  "@offlineMode": {
+    "description": "Label for offline mode"
+  },
+  "recentSearches": "Recent Searches",
+  "@recentSearches": {
+    "description": "Label for recent searches section"
+  },
+  "clearHistory": "Clear History",
+  "@clearHistory": {
+    "description": "Button text to clear search history"
+  },
+  "retry": "Retry",
+  "@retry": {
+    "description": "Button text to retry an action"
+  },
+  "hazardWarningColor": "FFC107",
+  "@hazardWarningColor": {
+    "description": "Color code for hazard warnings"
+  },
+  "safeCompoundColor": "4CAF50",
+  "@safeCompoundColor": {
+    "description": "Color code for safe compounds"
+  },
+  "noResultsFound": "No results found",
+  "@noResultsFound": {
+    "description": "Message when no search results are found"
+  },
+  "resultsFound": "results found",
+  "@resultsFound": {
+    "description": "Text showing number of results found"
+  },
+  "searchTips": "Search Tips",
+  "@searchTips": {
+    "description": "Label for search tips section"
+  },
+  "featuredCompounds": "Featured Compounds",
+  "@featuredCompounds": {
+    "description": "Title for featured compounds section"
+  }
+}
