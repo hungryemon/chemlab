@@ -60,6 +60,9 @@ class PubChemApi {
         // Get synonyms separately
         final synonyms = await _getCompoundSynonyms(cid);
 
+        // Get description separately
+        final description = await _getCompoundDescription(cid);
+
         return Compound(
           cid: cid,
           title: properties['Title'] ?? '',
@@ -68,6 +71,7 @@ class PubChemApi {
           iupacName: properties['IUPACName'],
           casNumber: properties['CASRegistryNumber'],
           synonyms: synonyms,
+          description: description,
           fetchedAt: DateTime.now(),
         );
       }
@@ -99,49 +103,45 @@ class PubChemApi {
     }
   }
 
-  /// Get multiple compounds by CIDs
-  Future<List<Compound>> getMultipleCompounds(List<int> cids) async {
-    final compounds = <Compound>[];
+  /// Get compound description
+  Future<String> _getCompoundDescription(int cid) async {
+    try {
+      final data = await _networkService.get<Map<String, dynamic>>(
+        '/compound/cid/$cid/description/JSON',
+      );
 
-    // Process in batches to avoid overwhelming the API
-    const batchSize = 5;
-    for (int i = 0; i < cids.length; i += batchSize) {
-      final batch = cids.skip(i).take(batchSize).toList();
-      final futures = batch.map((cid) => getCompoundDetails(cid));
-
-      try {
-        final results = await Future.wait(futures);
-        compounds.addAll(results);
-      } catch (e) {
-        // Continue with other batches even if one fails
-        print('Failed to fetch batch starting at index $i: $e');
+      if (data['InformationList'] != null &&
+          data['InformationList']['Information'] != null &&
+          data['InformationList']['Information'].isNotEmpty) {
+        final description = data['InformationList']['Information'].first['Description'];
+        return description;
       }
 
-      // Add delay between batches to respect rate limits
-      if (i + batchSize < cids.length) {
-        await Future.delayed(const Duration(milliseconds: 200));
-      }
+      return '';
+    } catch (e) {
+      // Return empty list if synonyms fetch fails
+      return '';
     }
-
-    return compounds;
   }
+
+  
 
   /// Convert network exceptions to PubChem API exceptions
   PubChemApiException _convertNetworkException(NetworkException e) {
     switch (e.runtimeType) {
-      case NotFoundException:
+      case NotFoundException _:
         return PubChemApiException('Compound not found', e.statusCode);
-      case RateLimitException:
+      case RateLimitException _:
         return PubChemApiException('Rate limit exceeded', e.statusCode);
-      case ServiceUnavailableException:
+      case ServiceUnavailableException _:
         return PubChemApiException('Service unavailable', e.statusCode);
-      case ConnectionTimeoutException:
+      case ConnectionTimeoutException _:
         return PubChemApiException('Connection timeout', e.statusCode);
-      case NetworkUnavailableException:
+      case NetworkUnavailableException _:
         return PubChemApiException('Network unavailable', e.statusCode);
-      case ServerException:
+      case ServerException _:
         return PubChemApiException('Server error: ${e.message}', e.statusCode);
-      case RequestCancelledException:
+      case RequestCancelledException _:
         return PubChemApiException('Request cancelled', e.statusCode);
       default:
         return PubChemApiException(e.message, e.statusCode);

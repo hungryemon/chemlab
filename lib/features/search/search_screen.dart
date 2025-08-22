@@ -136,6 +136,76 @@ class _SearchScreenState extends State<SearchScreen> {
   void _onClearAllHistory() {
     context.read<CompoundProvider>().clearSearchHistory();
   }
+
+  /// Build search hints widget
+  Widget _buildSearchHints() {
+    final theme = Theme.of(context);
+    
+    final searchExamples = [
+      'Water',
+      'Caffeine', 
+      'Aspirin',
+      'Glucose',
+      'Ethanol',
+      'Sodium Chloride',
+    ];
+    
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SizedBox(height: 32),
+          Icon(
+            Icons.search,
+            size: 64,
+            color: theme.colorScheme.primary.withOpacity(0.5),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'Search Chemical Compounds',
+            style: theme.textTheme.headlineSmall?.copyWith(
+              color: theme.colorScheme.onSurface,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Enter a compound name, formula, or CID to get detailed information',
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: 32),
+          Text(
+            'Try searching for:',
+            style: theme.textTheme.titleMedium?.copyWith(
+              color: theme.colorScheme.onSurface,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: searchExamples.map((example) {
+              return ActionChip(
+                label: Text(example),
+                onPressed: () {
+                  _searchController.text = example;
+                  _performSearch(example);
+                },
+                backgroundColor: theme.colorScheme.surfaceVariant,
+                labelStyle: TextStyle(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              );
+            }).toList(),
+          ),
+        ],
+      ),
+    );
+  }
   
   @override
   Widget build(BuildContext context) {
@@ -167,10 +237,18 @@ class _SearchScreenState extends State<SearchScreen> {
           // Content area
           Expanded(
             child: _showHistory
-                ? SearchHistorySection(
-                    onHistoryTap: _onHistoryTap,
-                    onHistoryRemove: _onHistoryRemove,
-                    onClearAllHistory: _onClearAllHistory,
+                ? Consumer<CompoundProvider>(
+                    builder: (context, provider, child) {
+                      // Show search hints if no history exists
+                      if (provider.searchHistory.isEmpty) {
+                        return _buildSearchHints();
+                      }
+                      return SearchHistorySection(
+                        onHistoryTap: _onHistoryTap,
+                        onHistoryRemove: _onHistoryRemove,
+                        onClearAllHistory: _onClearAllHistory,
+                      );
+                    },
                   )
                 : SearchResultsSection(
                     currentQuery: _currentQuery,

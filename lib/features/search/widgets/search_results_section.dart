@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../core/providers/compound_provider.dart';
 import '../../../core/widgets/card/compound_card.dart';
-import '../../../core/widgets/loader/app_shimmer.dart';
 import '../../../core/widgets/misc/error_widget.dart';
 import '../../../core/localization/app_localizations.dart';
 import '../../../app.dart';
@@ -61,9 +60,36 @@ class SearchLoadingResults extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ShimmerList(
-      itemCount: 5,
-      itemBuilder: (context, index) => const ShimmerCompoundCard(),
+    final theme = Theme.of(context);
+    
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        children: [
+          // Loading indicator with text
+          Container(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              children: [
+                CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    theme.colorScheme.primary,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'Searching compounds...',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          
+        ],
+      ),
     );
   }
 }

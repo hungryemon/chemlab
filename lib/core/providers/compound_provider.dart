@@ -116,7 +116,8 @@ class CompoundProvider extends ChangeNotifier {
       return;
     }
 
-    _setLoading(true);
+    _setSearching(true);
+    _clearSearchError();
 
     try {
       // Add to search history
@@ -128,18 +129,15 @@ class CompoundProvider extends ChangeNotifier {
 
       if (searchedCompound == null) {
         _searchResults = null;
-        _clearError();
       } else {
         // Sort by original CID order
         _searchResults = searchedCompound;
-
-        _clearError();
       }
     } catch (e) {
-      _setError('Search failed: $e');
+      _setSearchError('Search failed: $e');
       _searchResults = null;
     } finally {
-      _setLoading(false);
+      _setSearching(false);
     }
   }
 
@@ -227,12 +225,6 @@ class CompoundProvider extends ChangeNotifier {
     }
   }
 
-  /// Clear search results
-  void clearSearchResults() {
-    _searchResults = null;
-    notifyListeners();
-  }
-
   /// Clear selected compound
   void clearSelectedCompound() {
     _selectedCompound = null;
@@ -277,6 +269,31 @@ class CompoundProvider extends ChangeNotifier {
   /// Clear featured error
   void _clearFeaturedError() {
     _featuredError = null;
+    notifyListeners();
+  }
+
+  /// Set searching state
+  void _setSearching(bool searching) {
+    _isSearching = searching;
+    notifyListeners();
+  }
+
+  /// Set search error message
+  void _setSearchError(String error) {
+    _searchError = error;
+    notifyListeners();
+  }
+
+  /// Clear search error
+  void _clearSearchError() {
+    _searchError = null;
+    notifyListeners();
+  }
+
+  /// Clear search results
+  void clearSearchResults() {
+    _searchResults = null;
+    _clearSearchError();
     notifyListeners();
   }
 
