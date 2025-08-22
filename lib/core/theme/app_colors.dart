@@ -37,6 +37,11 @@ class AppColors {
   // Additional semantic colors
   static const Color hazardWarning = Color(0xFFFFC107);
   static const Color safeCompound = Color(0xFF4CAF50);
+  static const Color cautionCompound = Color(0xFFFF9800);
+  
+  static const Color featuredGold = Color(0xFFFFB300);
+  static const Color featuredSilver = Color(0xFFC0C0C0);
+  static const Color featuredBronze = Color(0xFFCD7F32);
   
   // Spacing constants
   static const double paddingSmall = 8.0;

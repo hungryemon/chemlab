@@ -1,21 +1,23 @@
+import 'package:chemlab/core/utils/app_logger.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/providers/compound_provider.dart';
 import '../../core/providers/theme_provider.dart';
-import '../../core/widgets/compound_card.dart';
-import '../../core/widgets/shimmer_widget.dart';
+import '../../core/widgets/app_shimmer.dart';
 import '../../core/widgets/error_widget.dart';
 import '../../core/widgets/search_bar.dart';
+import '../../core/widgets/home_compound_card.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/utils/constants.dart';
 import '../../core/localization/app_localizations.dart';
 import '../../app.dart';
+import '../../core/widgets/sliver_delegate_with_fixed_cross_axis_count_and_fixed_height.dart';
 
 /// Home screen displaying featured compounds and search functionality
 class HomeScreen extends StatefulWidget {
   /// Constructor
   const HomeScreen({super.key});
-  
+
   @override
   State<HomeScreen> createState() => _HomeScreenState();
 }
@@ -23,44 +25,45 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   final TextEditingController _searchController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
-  
+  bool alreadyLoaded = false;
+
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _loadFeaturedCompounds();
-    });
+    // WidgetsBinding.instance.addPostFrameCallback((_) {
+    //     _loadFeaturedCompounds(); 
+    // });
   }
-  
+
   @override
   void dispose() {
     _searchController.dispose();
     _scrollController.dispose();
     super.dispose();
   }
-  
+
   /// Load featured compounds on app start
   Future<void> _loadFeaturedCompounds() async {
     final provider = context.read<CompoundProvider>();
     await provider.loadFeaturedCompounds();
   }
-  
+
   /// Handle search submission
   void _handleSearch(String query) {
     if (query.trim().isNotEmpty) {
-      context.goSearch(query.trim());
+      context.pushSearch(query.trim());
     }
   }
-  
+
   /// Handle refresh
   Future<void> _handleRefresh() async {
     await _loadFeaturedCompounds();
   }
-  
+
   @override
   Widget build(BuildContext context) {
     final localizations = AppLocalizations.of(context);
-    
+
     return Scaffold(
       appBar: _buildAppBar(context, localizations!),
       body: RefreshIndicator(
@@ -69,18 +72,14 @@ class _HomeScreenState extends State<HomeScreen> {
           controller: _scrollController,
           slivers: [
             // Search bar
-            SliverToBoxAdapter(
-              child: _buildSearchSection(localizations!),
-            ),
-            
+            SliverToBoxAdapter(child: _buildSearchSection(localizations)),
+
             // Featured compounds section
-            SliverToBoxAdapter(
-              child: _buildFeaturedSection(localizations!),
-            ),
-            
+            SliverToBoxAdapter(child: _buildFeaturedSection(localizations)),
+
             // Featured compounds list
             _buildFeaturedCompoundsList(),
-            
+
             // Bottom padding
             const SliverToBoxAdapter(
               child: SizedBox(height: AppColors.paddingLarge),
@@ -90,7 +89,7 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
   }
-  
+
   /// Build app bar with theme toggle
   PreferredSizeWidget _buildAppBar(
     BuildContext context,
@@ -105,9 +104,7 @@ class _HomeScreenState extends State<HomeScreen> {
             return IconButton(
               onPressed: themeProvider.toggleTheme,
               icon: Icon(
-                themeProvider.isDarkMode
-                    ? Icons.light_mode
-                    : Icons.dark_mode,
+                themeProvider.isDarkMode ? Icons.light_mode : Icons.dark_mode,
               ),
               tooltip: themeProvider.isDarkMode
                   ? 'Switch to light mode'
@@ -118,7 +115,7 @@ class _HomeScreenState extends State<HomeScreen> {
       ],
     );
   }
-  
+
   /// Build search section
   Widget _buildSearchSection(AppLocalizations localizations) {
     return CompoundSearchBar(
@@ -130,7 +127,7 @@ class _HomeScreenState extends State<HomeScreen> {
       },
     );
   }
-  
+
   /// Build featured section header
   Widget _buildFeaturedSection(AppLocalizations localizations) {
     return Padding(
@@ -142,21 +139,21 @@ class _HomeScreenState extends State<HomeScreen> {
         children: [
           Icon(
             Icons.star,
-            color: Theme.of(context).colorScheme.primary,
+            color: AppColors.featuredGold,
             size: 24,
           ),
           const SizedBox(width: AppColors.paddingSmall),
           Text(
             localizations.featuredCompounds,
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-              fontWeight: FontWeight.w600,
-            ),
+            style: Theme.of(
+              context,
+            ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w600),
           ),
         ],
       ),
     );
   }
-  
+
   /// Build featured compounds list
   Widget _buildFeaturedCompoundsList() {
     return Consumer<CompoundProvider>(
@@ -164,7 +161,7 @@ class _HomeScreenState extends State<HomeScreen> {
         if (provider.isLoadingFeatured) {
           return _buildLoadingList();
         }
-        
+
         if (provider.featuredError != null) {
           return SliverToBoxAdapter(
             child: AppErrorWidget(
@@ -173,7 +170,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           );
         }
-        
+
         if (provider.featuredCompounds.isEmpty) {
           return SliverToBoxAdapter(
             child: AppErrorWidget.notFound(
@@ -182,30 +179,53 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           );
         }
-        
-        return SliverList(
-          delegate: SliverChildBuilderDelegate(
-            (context, index) {
+
+        // Display compounds in a responsive grid layout
+        return SliverPadding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppColors.paddingLarge,
+          ),
+          sliver: SliverGrid(
+            gridDelegate:
+                SliverGridDelegateWithFixedCrossAxisCountAndFixedHeight(
+                  crossAxisCount: _getCrossAxisCount(context),
+                  height: 160,
+                  crossAxisSpacing: AppColors.paddingMedium,
+                  mainAxisSpacing: AppColors.paddingMedium,
+                ),
+            delegate: SliverChildBuilderDelegate((context, index) {
               final compound = provider.featuredCompounds[index];
-              return CompoundCard(
-                compound: compound,
-                showDetails: true,
-                onTap: () => context.goCompoundDetails(compound.cid),
-              );
-            },
-            childCount: provider.featuredCompounds.length,
+              return HomeCompoundCard(compound: compound);
+            }, childCount: provider.featuredCompounds.length),
           ),
         );
       },
     );
   }
-  
+
+  /// Get cross axis count based on screen width
+  int _getCrossAxisCount(BuildContext context) {
+    final width = MediaQuery.of(context).size.width;
+    if (width > 1200) return 3;
+    if (width > 800) return 2;
+    return 1;
+  }
+
   /// Build loading shimmer list
   Widget _buildLoadingList() {
-    return SliverList(
-      delegate: SliverChildBuilderDelegate(
-        (context, index) => const ShimmerCompoundCard(),
-        childCount: AppConstants.featuredCompoundCids.length,
+    return SliverPadding(
+      padding: const EdgeInsets.symmetric(horizontal: AppColors.paddingLarge),
+      sliver: SliverGrid(
+        gridDelegate: SliverGridDelegateWithFixedCrossAxisCountAndFixedHeight(
+          crossAxisCount: _getCrossAxisCount(context),
+          height: 160,
+          crossAxisSpacing: AppColors.paddingMedium,
+          mainAxisSpacing: AppColors.paddingMedium,
+        ),
+        delegate: SliverChildBuilderDelegate(
+          (context, index) => const ShimmerCompoundCard(),
+          childCount: AppConstants.featuredCompoundNames.length,
+        ),
       ),
     );
   }

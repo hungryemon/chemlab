@@ -6,9 +6,9 @@ import '../theme/app_colors.dart';
 /// Utility functions for formatting and validation
 class AppHelpers {
   /// Format molecular weight with appropriate units
-  static String formatMolecularWeight(double? weight) {
-    if (weight == null) return 'N/A';
-    return '${weight.toStringAsFixed(2)} g/mol';
+  static String formatMolecularWeight(String? weight) {
+    if (weight == null || weight.isEmpty) return 'N/A';
+    return '$weight g/mol';
   }
   
   /// Format molecular formula with subscripts

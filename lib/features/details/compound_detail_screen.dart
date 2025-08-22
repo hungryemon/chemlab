@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../../core/providers/compound_provider.dart';
 import '../../core/models/compound.dart';
-import '../../core/widgets/shimmer_widget.dart';
+import '../../core/widgets/app_shimmer.dart';
 import '../../core/widgets/error_widget.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/utils/helpers.dart';
@@ -61,6 +61,7 @@ class _CompoundDetailScreenState extends State<CompoundDetailScreen> {
       appBar: AppBar(
         title: Text(localizations?.detailsTitle ?? 'Compound Details'),
         centerTitle: true,
+        automaticallyImplyLeading: true,
         actions: [
           Consumer<CompoundProvider>(
             builder: (context, provider, child) {
@@ -111,7 +112,7 @@ class _CompoundDetailScreenState extends State<CompoundDetailScreen> {
       child: Column(
         children: [
           // Header shimmer
-          const ShimmerWidget(height: 40, width: double.infinity),
+          const ShimmerPlaceholder(height: 40, width: double.infinity),
           const SizedBox(height: AppColors.paddingLarge),
           
           // Info cards shimmer
@@ -119,7 +120,7 @@ class _CompoundDetailScreenState extends State<CompoundDetailScreen> {
             4,
             (index) => Container(
               margin: const EdgeInsets.only(bottom: AppColors.paddingMedium),
-              child: const ShimmerWidget(height: 120, width: double.infinity),
+              child: const ShimmerPlaceholder(height: 120, width: double.infinity),
             ),
           ),
         ],

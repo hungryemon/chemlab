@@ -1,23 +1,21 @@
+import 'package:chemlab/core/utils/app_logger.dart';
 import 'package:flutter/material.dart';
-import 'package:hive_flutter/hive_flutter.dart';
-import '../api/pubchem_api.dart';
+import '../data/remote/pubchem_api.dart';
+import '../data/local/local_data.dart';
 import '../models/compound.dart';
 import '../utils/constants.dart';
 
 /// Provider for managing compound data and API interactions
 class CompoundProvider extends ChangeNotifier {
-  static const int _maxCacheSize = 50;
-  static const int _maxSearchHistory = 20;
-  
   final PubChemApi _api = PubChemApi();
-  late Box<Map> _compoundBox;
-  late Box<String> _searchHistoryBox;
-  
+  final CacheService _cacheService = CacheService();
+  final SearchHistoryService _searchHistoryService = SearchHistoryService();
+
   // State variables
   bool _isLoading = false;
   String? _error;
   String? _detailsError;
-  List<Compound> _searchResults = [];
+  Compound? _searchResults;
   List<Compound> _featuredCompounds = [];
   List<String> _searchHistory = [];
   Compound? _selectedCompound;
@@ -25,12 +23,12 @@ class CompoundProvider extends ChangeNotifier {
   bool _isSearching = false;
   String? _searchError;
   bool _isLoadingDetails = false;
-  
+
   // Getters
   bool get isLoading => _isLoading;
   String? get error => _error;
   String? get detailsError => _detailsError;
-  List<Compound> get searchResults => _searchResults;
+  Compound? get searchedCompound => _searchResults;
   List<Compound> get featuredCompounds => _featuredCompounds;
   List<String> get searchHistory => _searchHistory;
   Compound? get selectedCompound => _selectedCompound;
@@ -45,172 +43,120 @@ class CompoundProvider extends ChangeNotifier {
   bool get isLoadingFeatured => _isLoadingFeatured;
   String? get featuredError => _featuredError;
 
-
-
-
-
   /// Initialize provider
   Future<void> initialize() async {
     try {
-      _compoundBox = Hive.box('cache');
-      _searchHistoryBox = Hive.box('search_history');
       await _loadSearchHistory();
       await _loadFeaturedCompounds();
     } catch (e) {
       _setError('Failed to initialize compound provider: $e');
     }
   }
-  
+
   /// Load search history from storage
   Future<void> _loadSearchHistory() async {
     try {
-      _searchHistory = _searchHistoryBox.values.toList();
+      _searchHistory = _searchHistoryService.getSearchHistory();
       notifyListeners();
     } catch (e) {
       print('Error loading search history: $e');
     }
   }
-  
+
   /// Load featured compounds for home screen
   Future<void> _loadFeaturedCompounds() async {
-    _setLoading(true);
-    
+    _setFeaturedLoading(true);
+
     try {
-      // Featured compound CIDs (common compounds)
-      const featuredCids = [962, 5793, 6324, 887, 5460341]; // Water, Glucose, Caffeine, Methanol, Aspirin
-      
-      // Try to load from cache first
-      final cachedCompounds = <Compound>[];
-      final missingCids = <int>[];
-      
-      for (final cid in featuredCids) {
-        final cached = _getFromCache(cid);
-        if (cached != null) {
-          cachedCompounds.add(cached);
-        } else {
-          missingCids.add(cid);
+      // Featured compound names from constants
+      const featuredNames = AppConstants.featuredCompoundNames;
+
+      final loadedCompounds = <Compound>[];
+
+      for (final name in featuredNames) {
+        try {
+          // Search for compound by name to get CID
+          final searchedCompound = await _api.searchCompounds(name);
+
+          if (searchedCompound != null) {
+            // Get the first CID (most relevant result)
+            final int cid = searchedCompound.cid;
+
+            // Try to get from cache first
+            Compound? compound = _cacheService.getCompound(cid);
+
+            if (compound == null) {
+              // Fetch from API
+              compound = await _api.getCompoundDetails(cid);
+              await _cacheService.saveCompound(compound);
+            }
+            AppLogger.info("Featured Compound loaded: ${compound.title}");
+            loadedCompounds.add(compound);
+          }
+        } catch (e) {
+          print('Error loading featured compound $name: $e');
+          // Continue with other compounds even if one fails
         }
       }
-      
-      // Fetch missing compounds from API
-      if (missingCids.isNotEmpty) {
-        final fetchedCompounds = await _api.getMultipleCompounds(missingCids);
-        
-        // Cache fetched compounds
-        for (final compound in fetchedCompounds) {
-          await _saveToCache(compound);
-        }
-        
-        cachedCompounds.addAll(fetchedCompounds);
-      }
-      
-      // Sort by original order
-      _featuredCompounds = featuredCids
-          .map((cid) => cachedCompounds.firstWhere(
-                (compound) => compound.cid == cid,
-                orElse: () => Compound(
-                  cid: cid,
-                  title: 'Unknown Compound',
-                  fetchedAt: DateTime.now(),
-                ),
-              ))
-          .toList();
-      
-      _clearError();
+
+      _featuredCompounds = loadedCompounds;
+      _clearFeaturedError();
     } catch (e) {
-      _setError('Failed to load featured compounds: $e');
+      _setFeaturedError('Failed to load featured compounds: $e');
     } finally {
-      _setLoading(false);
+      _setFeaturedLoading(false);
     }
   }
-  
+
   /// Search compounds by name
   Future<void> searchCompounds(String searchTerm) async {
     if (searchTerm.trim().isEmpty) {
-      _searchResults = [];
+      _searchResults = null;
       notifyListeners();
       return;
     }
-    
+
     _setLoading(true);
-    
+
     try {
       // Add to search history
-      await _addToSearchHistory(searchTerm.trim());
-      
+      await _searchHistoryService.addSearchTerm(searchTerm.trim());
+      await _updateSearchHistory();
+
       // Search for compound CIDs
-      final cids = await _api.searchCompounds(searchTerm);
-      
-      if (cids.isEmpty) {
-        _searchResults = [];
+      final searchedCompound = await _api.searchCompounds(searchTerm);
+
+      if (searchedCompound == null) {
+        _searchResults = null;
         _clearError();
       } else {
-        // Limit results to first 10 compounds
-        final limitedCids = cids.take(10).toList();
-        
-        // Try to get from cache first
-        final compounds = <Compound>[];
-        final missingCids = <int>[];
-        
-        for (final cid in limitedCids) {
-          final cached = _getFromCache(cid);
-          if (cached != null) {
-            compounds.add(cached);
-          } else {
-            missingCids.add(cid);
-          }
-        }
-        
-        // Fetch missing compounds
-        if (missingCids.isNotEmpty) {
-          final fetchedCompounds = await _api.getMultipleCompounds(missingCids);
-          
-          // Cache fetched compounds
-          for (final compound in fetchedCompounds) {
-            await _saveToCache(compound);
-          }
-          
-          compounds.addAll(fetchedCompounds);
-        }
-        
         // Sort by original CID order
-        _searchResults = limitedCids
-            .map((cid) => compounds.firstWhere(
-                  (compound) => compound.cid == cid,
-                  orElse: () => Compound(
-                    cid: cid,
-                    title: 'Unknown Compound',
-                    fetchedAt: DateTime.now(),
-                  ),
-                ))
-            .toList();
-        
+        _searchResults = searchedCompound;
+
         _clearError();
       }
     } catch (e) {
       _setError('Search failed: $e');
-      _searchResults = [];
+      _searchResults = null;
     } finally {
       _setLoading(false);
     }
   }
-  
+
   /// Get compound details by CID
   Future<Compound?> getCompoundDetails(int cid) async {
     _setLoading(true);
-    
+
     try {
       // Try cache first
-      Compound? compound = _getFromCache(cid);
-      
+      Compound? compound = _cacheService.getCompound(cid);
+
       if (compound == null) {
         // Fetch from API
         compound = await _api.getCompoundDetails(cid);
-        if (compound != null) {
-          await _saveToCache(compound);
-        }
+        await _cacheService.saveCompound(compound);
       }
-      
+
       _selectedCompound = compound;
       _clearError();
       return compound;
@@ -222,37 +168,21 @@ class CompoundProvider extends ChangeNotifier {
       _setLoading(false);
     }
   }
-  
-  /// Add search term to history
-  Future<void> _addToSearchHistory(String searchTerm) async {
+
+  /// Update local search history from service
+  Future<void> _updateSearchHistory() async {
     try {
-      // Remove if already exists
-      _searchHistory.remove(searchTerm);
-      
-      // Add to beginning
-      _searchHistory.insert(0, searchTerm);
-      
-      // Limit history size
-      if (_searchHistory.length > _maxSearchHistory) {
-        _searchHistory = _searchHistory.take(_maxSearchHistory).toList();
-      }
-      
-      // Save to storage
-      await _searchHistoryBox.clear();
-      for (int i = 0; i < _searchHistory.length; i++) {
-        await _searchHistoryBox.put(i, _searchHistory[i]);
-      }
-      
+      _searchHistory = _searchHistoryService.getSearchHistory();
       notifyListeners();
     } catch (e) {
-      print('Error adding to search history: $e');
+      print('Error updating search history: $e');
     }
   }
-  
+
   /// Clear search history
   Future<void> clearSearchHistory() async {
     try {
-      await _searchHistoryBox.clear();
+      await _searchHistoryService.clearSearchHistory();
       _searchHistory.clear();
       notifyListeners();
     } catch (e) {
@@ -262,39 +192,13 @@ class CompoundProvider extends ChangeNotifier {
 
   /// Load featured compounds
   Future<void> loadFeaturedCompounds() async {
-    _isLoadingFeatured = true;
-    _featuredError = null;
-    notifyListeners();
-
-    try {
-      _featuredCompounds.clear();
-      
-      for (final cid in AppConstants.featuredCompoundCids) {
-        try {
-          final compound = await getCompoundDetails(cid);
-          if (compound != null) {
-            _featuredCompounds.add(compound);
-          }
-        } catch (e) {
-          print('Error loading featured compound $cid: $e');
-        }
-      }
-      
-      _isLoadingFeatured = false;
-      notifyListeners();
-    } catch (e) {
-      _isLoadingFeatured = false;
-      _featuredError = 'Failed to load featured compounds';
-      notifyListeners();
-      print('Error loading featured compounds: $e');
-    }
+    await _loadFeaturedCompounds();
   }
 
   /// Load search history from storage
   Future<void> loadSearchHistory() async {
     try {
-      final keys = _searchHistoryBox.keys.toList();
-      _searchHistory = keys.cast<String>().toList();
+      _searchHistory = _searchHistoryService.getSearchHistory();
       notifyListeners();
     } catch (e) {
       print('Error loading search history: $e');
@@ -304,14 +208,9 @@ class CompoundProvider extends ChangeNotifier {
   /// Add to search history
   Future<void> addToSearchHistory(String query) async {
     try {
-      if (query.isNotEmpty && !_searchHistory.contains(query)) {
-        _searchHistory.insert(0, query);
-        // Keep only last 10 searches
-        if (_searchHistory.length > 10) {
-          _searchHistory = _searchHistory.take(10).toList();
-        }
-        await _searchHistoryBox.put(query, query);
-        notifyListeners();
+      if (query.isNotEmpty) {
+        await _searchHistoryService.addSearchTerm(query);
+        await _updateSearchHistory();
       }
     } catch (e) {
       print('Error adding to search history: $e');
@@ -319,79 +218,71 @@ class CompoundProvider extends ChangeNotifier {
   }
 
   /// Remove from search history
-  void removeFromSearchHistory(String query) {
-    _searchHistory.remove(query);
-    notifyListeners();
-  }
-  
-  /// Get compound from cache
-  Compound? _getFromCache(int cid) {
+  Future<void> removeFromSearchHistory(String query) async {
     try {
-      final data = _compoundBox.get(cid.toString());
-      if (data != null) {
-        return Compound.fromJson(Map<String, dynamic>.from(data));
-      }
+      await _searchHistoryService.removeSearchTerm(query);
+      await _updateSearchHistory();
     } catch (e) {
-      print('Error getting from cache: $e');
-    }
-    return null;
-  }
-  
-  /// Save compound to cache
-  Future<void> _saveToCache(Compound compound) async {
-    try {
-      await _compoundBox.put(compound.cid.toString(), compound.toJson());
-      
-      // Manage cache size
-      if (_compoundBox.length > _maxCacheSize) {
-        final keys = _compoundBox.keys.toList();
-        final oldestKey = keys.first;
-        await _compoundBox.delete(oldestKey);
-      }
-    } catch (e) {
-      print('Error saving to cache: $e');
+      print('Error removing from search history: $e');
     }
   }
-  
+
   /// Clear search results
   void clearSearchResults() {
-    _searchResults = [];
+    _searchResults = null;
     notifyListeners();
   }
-  
+
   /// Clear selected compound
   void clearSelectedCompound() {
     _selectedCompound = null;
     notifyListeners();
   }
-  
+
   /// Refresh featured compounds
   Future<void> refreshFeaturedCompounds() async {
     await _loadFeaturedCompounds();
   }
-  
+
   /// Set loading state
   void _setLoading(bool loading) {
     _isLoading = loading;
     notifyListeners();
   }
-  
+
   /// Set error message
   void _setError(String error) {
     _error = error;
     notifyListeners();
   }
-  
+
   /// Clear error
   void _clearError() {
     _error = null;
     notifyListeners();
   }
-  
+
+  /// Set featured loading state
+  void _setFeaturedLoading(bool loading) {
+    _isLoadingFeatured = loading;
+    notifyListeners();
+  }
+
+  /// Set featured error message
+  void _setFeaturedError(String error) {
+    _featuredError = error;
+    notifyListeners();
+  }
+
+  /// Clear featured error
+  void _clearFeaturedError() {
+    _featuredError = null;
+    notifyListeners();
+  }
+
   @override
   void dispose() {
-    _compoundBox.close();
-    _searchHistoryBox.close();
+    // Local data services are managed by HiveManager
     super.dispose();
   }
 }

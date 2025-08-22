@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:hive_flutter/hive_flutter.dart';
+import '../data/local/local_data.dart';
 
 /// Provider for managing app theme state (light/dark mode)
 class ThemeProvider extends ChangeNotifier {
-  static const String _themeModeKey = 'theme_mode';
-  
-  late Box _themeBox;
+  final PreferencesService _preferencesService = PreferencesService();
   ThemeMode _themeMode = ThemeMode.system;
   
   /// Current theme mode
@@ -23,7 +21,6 @@ class ThemeProvider extends ChangeNotifier {
   /// Initialize theme provider
   Future<void> initialize() async {
     try {
-      _themeBox = Hive.box('preferences');
       await _loadThemeMode();
     } catch (e) {
       print('Error initializing theme provider: $e');
@@ -35,10 +32,7 @@ class ThemeProvider extends ChangeNotifier {
   /// Load theme mode from storage
   Future<void> _loadThemeMode() async {
     try {
-      final savedThemeMode = _themeBox.get(_themeModeKey);
-      if (savedThemeMode != null) {
-        _themeMode = ThemeMode.values[savedThemeMode as int];
-      }
+      _themeMode = _preferencesService.getThemeMode();
     } catch (e) {
       print('Error loading theme mode: $e');
       _themeMode = ThemeMode.system;
@@ -53,7 +47,7 @@ class ThemeProvider extends ChangeNotifier {
     notifyListeners();
     
     try {
-      await _themeBox.put(_themeModeKey, themeMode.index);
+      await _preferencesService.setThemeMode(themeMode);
     } catch (e) {
       print('Error saving theme mode: $e');
     }
@@ -108,7 +102,7 @@ class ThemeProvider extends ChangeNotifier {
   
   @override
   void dispose() {
-    _themeBox.close();
+    // Preferences service is managed by HiveManager
     super.dispose();
   }
 }

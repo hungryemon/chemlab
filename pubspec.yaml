@@ -38,6 +38,7 @@ dependencies:
   
   # Networking
   dio: ^5.4.3+1
+  pretty_dio_logger: ^1.4.0
   
   # Routing
   go_router: ^14.2.7
@@ -48,6 +49,9 @@ dependencies:
   
   # Localization
   intl: ^0.20.2
+  
+  # UI Components
+  shimmer_animation: ^2.1.0
   
   # UI & Theming
   google_fonts: ^6.2.1

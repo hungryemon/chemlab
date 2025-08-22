@@ -10,7 +10,7 @@ class Compound {
   final String? molecularFormula;
   
   /// Molecular weight
-  final double? molecularWeight;
+  final String? molecularWeight;
   
   /// IUPAC name
   final String? iupacName;
@@ -50,7 +50,7 @@ class Compound {
       cid: json['cid'] as int,
       title: json['title'] as String,
       molecularFormula: json['molecular_formula'] as String?,
-      molecularWeight: (json['molecular_weight'] as num?)?.toDouble(),
+      molecularWeight: (json['molecular_weight'] as String?),
       iupacName: json['iupac_name'] as String?,
       casNumber: json['cas_number'] as String?,
       synonyms: (json['synonyms'] as List<dynamic>?)?.cast<String>() ?? [],
@@ -81,7 +81,7 @@ class Compound {
     int? cid,
     String? title,
     String? molecularFormula,
-    double? molecularWeight,
+    String? molecularWeight,
     String? iupacName,
     String? casNumber,
     List<String>? synonyms,

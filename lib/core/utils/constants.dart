@@ -22,13 +22,15 @@ class AppConstants {
   static const Duration shimmerDuration = Duration(milliseconds: 1500);
   static const Duration debounceDelay = Duration(milliseconds: 500);
   
-  // Featured compound CIDs (common compounds)
-  static const List<int> featuredCompoundCids = [
-    962,      // Water
-    5793,     // Glucose
-    6324,     // Caffeine
-    887,      // Methanol
-    5460341,  // Aspirin
+  // Featured compound names (common compounds)
+  static const List<String> featuredCompoundNames = [
+    'Water',
+    'Glucose', 
+    'Caffeine',
+    'Methanol',
+    'Aspirin',
+    'Acetone',
+    'Benzene',
   ];
   
   // Storage keys

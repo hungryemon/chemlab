@@ -2,11 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/providers/compound_provider.dart';
 import '../../core/widgets/compound_card.dart';
-import '../../core/widgets/shimmer_widget.dart';
+import '../../core/widgets/app_shimmer.dart';
 import '../../core/widgets/error_widget.dart';
 import '../../core/widgets/search_bar.dart';
 import '../../core/theme/app_colors.dart';
-import '../../core/utils/constants.dart';
 import '../../core/utils/helpers.dart';
 import '../../core/localization/app_localizations.dart';
 import '../../app.dart';
@@ -149,6 +148,7 @@ class _SearchScreenState extends State<SearchScreen> {
       appBar: AppBar(
         title: Text(localizations?.searchTitle ?? 'Search'),
         centerTitle: true,
+        automaticallyImplyLeading: true,
       ),
       body: Column(
         children: [
@@ -269,7 +269,7 @@ class _SearchScreenState extends State<SearchScreen> {
           );
         }
         
-        if (provider.searchResults.isEmpty && _currentQuery.isNotEmpty) {
+        if (provider.searchedCompound == null && _currentQuery.isNotEmpty) {
           return AppErrorWidget.notFound(
             customMessage: localizations.noResultsFound,
             onRetry: () => _performSearch(_currentQuery),
@@ -293,42 +293,20 @@ class _SearchScreenState extends State<SearchScreen> {
   Widget _buildResultsList(AppLocalizations localizations) {
     return Consumer<CompoundProvider>(
       builder: (context, provider, child) {
-        if (provider.searchResults.isEmpty) {
+        if (provider.searchedCompound == null) {
           return const SizedBox.shrink();
         }
         
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Results header
-            Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppColors.paddingLarge,
-                vertical: AppColors.paddingMedium,
-              ),
-              child: Text(
-                '${provider.searchResults.length} ${localizations.resultsFound}',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
             
-            // Results list
-            Expanded(
-              child: ListView.builder(
-                controller: _scrollController,
-                itemCount: provider.searchResults.length,
-                itemBuilder: (context, index) {
-                  final compound = provider.searchResults[index];
-                  return CompoundCard(
-                    compound: compound,
+            
+            CompoundCard(
+                    compound: provider.searchedCompound!,
                     showDetails: true,
-                    onTap: () => context.goCompoundDetails(compound.cid),
-                  );
-                },
-              ),
-            ),
+                    onTap: () => context.pushCompoundDetails(provider.searchedCompound!.cid),
+                  ),
           ],
         );
       },
