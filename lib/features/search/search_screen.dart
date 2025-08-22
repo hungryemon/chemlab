@@ -1,14 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/providers/compound_provider.dart';
-import '../../core/widgets/compound_card.dart';
-import '../../core/widgets/app_shimmer.dart';
-import '../../core/widgets/error_widget.dart';
-import '../../core/widgets/search_bar.dart';
-import '../../core/theme/app_colors.dart';
+import '../../core/widgets/bar/search_bar.dart';
 import '../../core/utils/helpers.dart';
 import '../../core/localization/app_localizations.dart';
-import '../../app.dart';
+import 'widgets/search_history_section.dart';
+import 'widgets/search_results_section.dart';
 
 /// Search screen for finding compounds
 class SearchScreen extends StatefulWidget {
@@ -170,146 +167,20 @@ class _SearchScreenState extends State<SearchScreen> {
           // Content area
           Expanded(
             child: _showHistory
-                ? _buildHistorySection(localizations!)
-                : _buildSearchResults(localizations!),
-          ),
-        ],
-      ),
-    );
-  }
-  
-  /// Build search history section
-  Widget _buildHistorySection(AppLocalizations localizations) {
-    return Consumer<CompoundProvider>(
-      builder: (context, provider, child) {
-        return SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Search tips
-              _buildSearchTips(localizations),
-              
-              // Search history
-              if (provider.searchHistory.isNotEmpty)
-                SearchHistory(
-                  history: provider.searchHistory,
-                  onHistoryTap: _onHistoryTap,
-                  onHistoryRemove: _onHistoryRemove,
-                  onClearAll: _onClearAllHistory,
-                ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-  
-  /// Build search tips section
-  Widget _buildSearchTips(AppLocalizations localizations) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    
-    return Container(
-      margin: const EdgeInsets.all(AppColors.paddingLarge),
-      padding: const EdgeInsets.all(AppColors.paddingLarge),
-      decoration: BoxDecoration(
-        color: colorScheme.primaryContainer.withOpacity(0.3),
-        borderRadius: BorderRadius.circular(AppColors.radiusMedium),
-        border: Border.all(
-          color: colorScheme.primary.withOpacity(0.2),
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(
-                Icons.lightbulb_outline,
-                color: colorScheme.primary,
-                size: 20,
-              ),
-              const SizedBox(width: AppColors.paddingSmall),
-              Text(
-                localizations.searchTips,
-                style: theme.textTheme.titleSmall?.copyWith(
-                  color: colorScheme.primary,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: AppColors.paddingMedium),
-          Text(
-            '• Search by compound name (e.g., "water", "caffeine")\n'
-            '• Use chemical formulas (e.g., "H2O", "C8H10N4O2")\n'
-            '• Try CAS numbers (e.g., "7732-18-5")\n'
-            '• Search for IUPAC names',
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: colorScheme.onSurface,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-  
-  /// Build search results section
-  Widget _buildSearchResults(AppLocalizations localizations) {
-    return Consumer<CompoundProvider>(
-      builder: (context, provider, child) {
-        if (provider.isSearching) {
-          return _buildLoadingResults();
-        }
-        
-        if (provider.searchError != null) {
-          return AppErrorWidget(
-            message: provider.searchError!,
-            onRetry: () => _performSearch(_currentQuery),
-          );
-        }
-        
-        if (provider.searchedCompound == null && _currentQuery.isNotEmpty) {
-          return AppErrorWidget.notFound(
-            customMessage: localizations.noResultsFound,
-            onRetry: () => _performSearch(_currentQuery),
-          );
-        }
-        
-        return _buildResultsList(localizations);
-      },
-    );
-  }
-  
-  /// Build loading results
-  Widget _buildLoadingResults() {
-    return ShimmerList(
-      itemCount: 5,
-      itemBuilder: (context, index) => const ShimmerCompoundCard(),
-    );
-  }
-  
-  /// Build search results list
-  Widget _buildResultsList(AppLocalizations localizations) {
-    return Consumer<CompoundProvider>(
-      builder: (context, provider, child) {
-        if (provider.searchedCompound == null) {
-          return const SizedBox.shrink();
-        }
-        
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            
-            
-            CompoundCard(
-                    compound: provider.searchedCompound!,
-                    showDetails: true,
-                    onTap: () => context.pushCompoundDetails(provider.searchedCompound!.cid),
+                ? SearchHistorySection(
+                    onHistoryTap: _onHistoryTap,
+                    onHistoryRemove: _onHistoryRemove,
+                    onClearAllHistory: _onClearAllHistory,
+                  )
+                : SearchResultsSection(
+                    currentQuery: _currentQuery,
+                    onRetrySearch: _performSearch,
                   ),
-          ],
-        );
-      },
+          ),
+        ],
+      ),
     );
   }
+  
+
 }

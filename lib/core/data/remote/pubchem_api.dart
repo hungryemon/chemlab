@@ -45,6 +45,7 @@ class PubChemApi {
     }
   }
 
+
   /// Get compound details by CID
   Future<Compound> getCompoundDetails(int cid) async {
     try {

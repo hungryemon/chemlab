@@ -1,17 +1,12 @@
-import 'package:chemlab/core/utils/app_logger.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/providers/compound_provider.dart';
-import '../../core/providers/theme_provider.dart';
-import '../../core/widgets/app_shimmer.dart';
-import '../../core/widgets/error_widget.dart';
-import '../../core/widgets/search_bar.dart';
-import '../../core/widgets/home_compound_card.dart';
 import '../../core/theme/app_colors.dart';
-import '../../core/utils/constants.dart';
-import '../../core/localization/app_localizations.dart';
 import '../../app.dart';
-import '../../core/widgets/sliver_delegate_with_fixed_cross_axis_count_and_fixed_height.dart';
+import 'widgets/home_app_bar.dart';
+import 'widgets/home_search_section.dart';
+import 'widgets/featured_section_header.dart';
+import 'widgets/featured_compounds_list.dart';
 
 /// Home screen displaying featured compounds and search functionality
 class HomeScreen extends StatefulWidget {
@@ -62,23 +57,28 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final localizations = AppLocalizations.of(context);
-
     return Scaffold(
-      appBar: _buildAppBar(context, localizations!),
+      appBar: const HomeAppBar(),
       body: RefreshIndicator(
         onRefresh: _handleRefresh,
         child: CustomScrollView(
           controller: _scrollController,
           slivers: [
             // Search bar
-            SliverToBoxAdapter(child: _buildSearchSection(localizations)),
+            SliverToBoxAdapter(
+              child: HomeSearchSection(
+                controller: _searchController,
+                onSubmitted: _handleSearch,
+              ),
+            ),
 
             // Featured compounds section
-            SliverToBoxAdapter(child: _buildFeaturedSection(localizations)),
+            const SliverToBoxAdapter(child: FeaturedSectionHeader()),
 
             // Featured compounds list
-            _buildFeaturedCompoundsList(),
+            FeaturedCompoundsList(
+              onLoadFeaturedCompounds: _loadFeaturedCompounds,
+            ),
 
             // Bottom padding
             const SliverToBoxAdapter(
@@ -90,143 +90,5 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  /// Build app bar with theme toggle
-  PreferredSizeWidget _buildAppBar(
-    BuildContext context,
-    AppLocalizations localizations,
-  ) {
-    return AppBar(
-      title: Text(localizations.homeTitle),
-      centerTitle: true,
-      actions: [
-        Consumer<ThemeProvider>(
-          builder: (context, themeProvider, child) {
-            return IconButton(
-              onPressed: themeProvider.toggleTheme,
-              icon: Icon(
-                themeProvider.isDarkMode ? Icons.light_mode : Icons.dark_mode,
-              ),
-              tooltip: themeProvider.isDarkMode
-                  ? 'Switch to light mode'
-                  : 'Switch to dark mode',
-            );
-          },
-        ),
-      ],
-    );
-  }
 
-  /// Build search section
-  Widget _buildSearchSection(AppLocalizations localizations) {
-    return CompoundSearchBar(
-      controller: _searchController,
-      hintText: localizations.searchHint,
-      onSubmitted: _handleSearch,
-      onChanged: (query) {
-        // Optional: Add real-time search suggestions here
-      },
-    );
-  }
-
-  /// Build featured section header
-  Widget _buildFeaturedSection(AppLocalizations localizations) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppColors.paddingLarge,
-        vertical: AppColors.paddingMedium,
-      ),
-      child: Row(
-        children: [
-          Icon(
-            Icons.star,
-            color: AppColors.featuredGold,
-            size: 24,
-          ),
-          const SizedBox(width: AppColors.paddingSmall),
-          Text(
-            localizations.featuredCompounds,
-            style: Theme.of(
-              context,
-            ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w600),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// Build featured compounds list
-  Widget _buildFeaturedCompoundsList() {
-    return Consumer<CompoundProvider>(
-      builder: (context, provider, child) {
-        if (provider.isLoadingFeatured) {
-          return _buildLoadingList();
-        }
-
-        if (provider.featuredError != null) {
-          return SliverToBoxAdapter(
-            child: AppErrorWidget(
-              message: provider.featuredError!,
-              onRetry: _loadFeaturedCompounds,
-            ),
-          );
-        }
-
-        if (provider.featuredCompounds.isEmpty) {
-          return SliverToBoxAdapter(
-            child: AppErrorWidget.notFound(
-              customMessage: 'No featured compounds available',
-              onRetry: _loadFeaturedCompounds,
-            ),
-          );
-        }
-
-        // Display compounds in a responsive grid layout
-        return SliverPadding(
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppColors.paddingLarge,
-          ),
-          sliver: SliverGrid(
-            gridDelegate:
-                SliverGridDelegateWithFixedCrossAxisCountAndFixedHeight(
-                  crossAxisCount: _getCrossAxisCount(context),
-                  height: 160,
-                  crossAxisSpacing: AppColors.paddingMedium,
-                  mainAxisSpacing: AppColors.paddingMedium,
-                ),
-            delegate: SliverChildBuilderDelegate((context, index) {
-              final compound = provider.featuredCompounds[index];
-              return HomeCompoundCard(compound: compound);
-            }, childCount: provider.featuredCompounds.length),
-          ),
-        );
-      },
-    );
-  }
-
-  /// Get cross axis count based on screen width
-  int _getCrossAxisCount(BuildContext context) {
-    final width = MediaQuery.of(context).size.width;
-    if (width > 1200) return 3;
-    if (width > 800) return 2;
-    return 1;
-  }
-
-  /// Build loading shimmer list
-  Widget _buildLoadingList() {
-    return SliverPadding(
-      padding: const EdgeInsets.symmetric(horizontal: AppColors.paddingLarge),
-      sliver: SliverGrid(
-        gridDelegate: SliverGridDelegateWithFixedCrossAxisCountAndFixedHeight(
-          crossAxisCount: _getCrossAxisCount(context),
-          height: 160,
-          crossAxisSpacing: AppColors.paddingMedium,
-          mainAxisSpacing: AppColors.paddingMedium,
-        ),
-        delegate: SliverChildBuilderDelegate(
-          (context, index) => const ShimmerCompoundCard(),
-          childCount: AppConstants.featuredCompoundNames.length,
-        ),
-      ),
-    );
-  }
 }
