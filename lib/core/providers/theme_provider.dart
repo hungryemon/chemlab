@@ -4,7 +4,7 @@ import '../data/local/local_data.dart';
 /// Provider for managing app theme state (light/dark mode)
 class ThemeProvider extends ChangeNotifier {
   final PreferencesService _preferencesService = PreferencesService();
-  ThemeMode _themeMode = ThemeMode.system;
+  ThemeMode _themeMode = ThemeMode.light;
   
   /// Current theme mode
   ThemeMode get themeMode => _themeMode;
@@ -25,7 +25,7 @@ class ThemeProvider extends ChangeNotifier {
     } catch (e) {
       print('Error initializing theme provider: $e');
       // Use default theme mode if initialization fails
-      _themeMode = ThemeMode.system;
+      _themeMode = ThemeMode.light;
     }
   }
   
@@ -35,7 +35,7 @@ class ThemeProvider extends ChangeNotifier {
       _themeMode = _preferencesService.getThemeMode();
     } catch (e) {
       print('Error loading theme mode: $e');
-      _themeMode = ThemeMode.system;
+      _themeMode = ThemeMode.light;
     }
   }
   

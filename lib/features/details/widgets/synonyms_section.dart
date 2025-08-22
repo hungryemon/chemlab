@@ -75,7 +75,7 @@ class _SynonymsSectionState extends State<SynonymsSection> {
                   Icon(
                     _isExpanded ? Icons.expand_less : Icons.expand_more,
                     size: 20,
-                    color: Theme.of(context).primaryColor,
+                    color: Theme.of(context).colorScheme.secondary,
                   ),
                   const SizedBox(width: 4),
                   Text(
@@ -83,7 +83,7 @@ class _SynonymsSectionState extends State<SynonymsSection> {
                         ? 'Show less' 
                         : 'Show ${synonyms.length - _maxCollapsedItems} more',
                     style: TextStyle(
-                      color: Theme.of(context).primaryColor,
+                      color: Theme.of(context).colorScheme.secondary,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
