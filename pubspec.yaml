@@ -73,6 +73,12 @@ dev_dependencies:
   
   # Localization Generation
   flutter_gen_runner: ^5.4.0
+  
+  # Splash Screen
+  flutter_native_splash: ^2.4.6
+  
+  # Launcher Icons
+  flutter_launcher_icons: ^0.14.4
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
@@ -113,4 +119,20 @@ flutter:
   #         weight: 700
   #
   # For details regarding fonts from package dependencies,
-  # see https://flutter.dev/to/font-from-package
+# see https://flutter.dev/to/font-from-package
+
+# Flutter Native Splash configuration
+flutter_native_splash:
+  color: "#005e58"
+  image: assets/icons/icon.png
+
+# Flutter Launcher Icons configuration
+flutter_launcher_icons:
+  android: "launcher_icon"
+  ios: false
+  image_path: "assets/icons/icon.png"
+  min_sdk_android: 21
+  adaptive_icon_background: "#005e58"
+  android_12:
+    image: assets/icons/icon.png
+    color: "#005e58"

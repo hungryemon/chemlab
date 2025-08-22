@@ -49,7 +49,7 @@ class PubChemApi {
 
 
   /// Get compound details by CID
-  Future<Compound> getCompoundDetails(int cid) async {
+  Future<Compound> getCompoundDetails(int cid ) async {
     try {
       final data = await _networkService.get<Map<String, dynamic>>(
         '/compound/cid/$cid/property/Title,MolecularFormula,MolecularWeight,IUPACName/JSON',
