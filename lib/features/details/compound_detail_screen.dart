@@ -15,6 +15,7 @@ import 'widgets/identifiers_section.dart';
 import 'widgets/synonyms_section.dart';
 import 'widgets/hazards_section.dart';
 import 'widgets/description_section.dart';
+import 'widgets/structure_image_section.dart';
 
 /// Compound detail screen displaying comprehensive compound information
 class CompoundDetailScreen extends StatefulWidget {
@@ -151,6 +152,14 @@ class _CompoundDetailScreenState extends State<CompoundDetailScreen> {
             // Header section
             CompoundHeaderSection(compound: compound),
             const SizedBox(height: AppColors.paddingLarge),
+            
+            // Structure image
+             ...[
+            StructureImageSection(
+              cid: widget.cid
+            ),
+            const SizedBox(height: AppColors.paddingLarge),
+            ],
             
             // Basic information
             BasicInfoSection(

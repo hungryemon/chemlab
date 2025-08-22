@@ -23,6 +23,7 @@ class Compound {
   
   /// Compound description
   final String? description;
+
   
   /// Hazard information
   final List<String> hazards;
