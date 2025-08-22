@@ -60,7 +60,7 @@ class CompoundHeaderSection extends StatelessWidget {
                 ),
                 child: Text(
                   AppHelpers.formatMolecularFormula(compound.molecularFormula),
-                  style: theme.textTheme.titleLarge?.copyWith(
+                  style: theme.textTheme.titleMedium?.copyWith(
                     fontFamily: 'monospace',
                     color: colorScheme.primary,
                     fontWeight: FontWeight.w600,

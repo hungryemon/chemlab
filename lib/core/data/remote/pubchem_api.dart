@@ -1,3 +1,5 @@
+import 'package:chemlab/core/utils/app_logger.dart';
+
 import '../../models/compound.dart';
 import '../../network/network.dart';
 
@@ -113,13 +115,19 @@ class PubChemApi {
       if (data['InformationList'] != null &&
           data['InformationList']['Information'] != null &&
           data['InformationList']['Information'].isNotEmpty) {
-        final description = data['InformationList']['Information'].first['Description'];
-        return description;
+        // Find the information entry that contains the description
+        final informationList = data['InformationList']['Information'] as List;
+        AppLogger.debug('Description: ${informationList.length}');
+        for (final info in informationList) {
+          if (info['Description'] != null) {
+            return info['Description'] as String;
+          }
+        }
       }
 
       return '';
     } catch (e) {
-      // Return empty list if synonyms fetch fails
+      // Return empty string if description fetch fails
       return '';
     }
   }

@@ -8,7 +8,7 @@ class HomeSearchSection extends StatelessWidget {
   final TextEditingController controller;
   
   /// Callback when search is submitted
-  final ValueChanged<String> onSubmitted;
+  final VoidCallback onSubmitted;
   
   /// Callback when search text changes
   final ValueChanged<String>? onChanged;
@@ -25,13 +25,16 @@ class HomeSearchSection extends StatelessWidget {
   Widget build(BuildContext context) {
     final localizations = AppLocalizations.of(context)!;
     
-    return CompoundSearchBar(
-      controller: controller,
-      hintText: localizations.searchHint,
-      onSubmitted: onSubmitted,
-      onChanged: onChanged ?? (query) {
-        // Optional: Add real-time search suggestions here
-      },
+    return GestureDetector(
+      onTap: onSubmitted,
+      child: CompoundSearchBar(
+        controller: controller,
+        hintText: localizations.searchHint,
+        enabled: false,
+        onChanged: onChanged ?? (query) {
+          // Optional: Add real-time search suggestions here
+        },
+      ),
     );
   }
 }

@@ -143,7 +143,9 @@ class CompoundProvider extends ChangeNotifier {
 
   /// Get compound details by CID
   Future<Compound?> getCompoundDetails(int cid) async {
-    _setLoading(true);
+    _isLoadingDetails = true;
+    _detailsError = null;
+    notifyListeners();
 
     try {
       // Try cache first
@@ -156,14 +158,17 @@ class CompoundProvider extends ChangeNotifier {
       }
 
       _selectedCompound = compound;
-      _clearError();
+      _currentCompound = compound;
+      _detailsError = null;
       return compound;
     } catch (e) {
-      _setError('Failed to load compound details: $e');
+      _detailsError = 'Failed to load compound details: $e';
       _selectedCompound = null;
+      _currentCompound = null;
       return null;
     } finally {
-      _setLoading(false);
+      _isLoadingDetails = false;
+      notifyListeners();
     }
   }
 
@@ -228,6 +233,13 @@ class CompoundProvider extends ChangeNotifier {
   /// Clear selected compound
   void clearSelectedCompound() {
     _selectedCompound = null;
+    notifyListeners();
+  }
+
+  /// Clear current compound
+  void clearCurrentCompound() {
+    _currentCompound = null;
+    _detailsError = null;
     notifyListeners();
   }
 

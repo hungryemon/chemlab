@@ -57,6 +57,7 @@ class DetailInfoRow extends StatelessWidget {
             Expanded(
               child: showLeadingText
                   ? Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
                           '$label: ',

@@ -44,10 +44,9 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   /// Handle search submission
-  void _handleSearch(String query) {
-    if (query.trim().isNotEmpty) {
-      context.pushSearch(query.trim());
-    }
+  void _handleSearch() {
+      context.pushSearch();
+    
   }
 
   /// Handle refresh

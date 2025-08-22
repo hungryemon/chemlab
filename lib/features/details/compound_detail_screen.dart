@@ -34,7 +34,10 @@ class _CompoundDetailScreenState extends State<CompoundDetailScreen> {
   @override
   void initState() {
     super.initState();
+    // Clear any previous compound data to ensure fresh state
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      final provider = context.read<CompoundProvider>();
+      provider.clearCurrentCompound();
       _loadCompoundDetails();
     });
   }
@@ -164,11 +167,13 @@ class _CompoundDetailScreenState extends State<CompoundDetailScreen> {
             const SizedBox(height: AppColors.paddingLarge),
             
             // Identifiers
+            if(compound.casNumber != null && compound.casNumber!.isNotEmpty) ...[
             IdentifiersSection(
               compound: compound,
               onCopyToClipboard: _copyToClipboard,
             ),
             const SizedBox(height: AppColors.paddingLarge),
+            ],
             
             // Synonyms
             if (compound.synonyms.isNotEmpty) ...[
@@ -176,6 +181,12 @@ class _CompoundDetailScreenState extends State<CompoundDetailScreen> {
                 compound: compound,
                 onCopyToClipboard: _copyToClipboard,
               ),
+              const SizedBox(height: AppColors.paddingLarge),
+            ],
+
+             // Description
+            if (compound.description != null && compound.description!.isNotEmpty) ...[
+              DescriptionSection(compound: compound),
               const SizedBox(height: AppColors.paddingLarge),
             ],
             
@@ -188,11 +199,7 @@ class _CompoundDetailScreenState extends State<CompoundDetailScreen> {
               const SizedBox(height: AppColors.paddingLarge),
             ],
             
-            // Description
-            if (compound.description != null) ...[
-              DescriptionSection(compound: compound),
-              const SizedBox(height: AppColors.paddingLarge),
-            ],
+           
           ],
         ),
       ),

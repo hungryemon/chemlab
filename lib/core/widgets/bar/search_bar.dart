@@ -30,6 +30,8 @@ class CompoundSearchBar extends StatefulWidget {
   
   /// Focus node
   final FocusNode? focusNode;
+
+  
   
   /// Constructor
   const CompoundSearchBar({
